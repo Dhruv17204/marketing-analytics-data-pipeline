@@ -1,0 +1,198 @@
+MARKETING ANALYTICS DATA WAREHOUSE – ARCHITECTURE OVERVIEW
+===========================================================
+
+------------------------------------------------------------
+FILE 1 – ETL Control + Staging + Validation
+------------------------------------------------------------
+
+Purpose:
+Build incremental, auditable, production-ready data ingestion from
+Databricks Gold into SQL Server.
+
+What We Implemented:
+
+1) Watermark Control (etl.WatermarkControl)
+   - Column: last_loaded_ts
+   - Drives incremental loading
+   - Prevents reprocessing of historical data
+   Why:
+   Enables continuous refresh architecture instead of full reload.
+
+2) Batch Logging (etl.BatchLoadLog)
+   - Tracks start_ts, end_ts
+   - Tracks watermark_before / watermark_after
+   - Tracks status (SUCCESS / FAILED)
+   - Logs error messages
+   Why:
+   Provides auditability and governance compliance.
+
+3) Staging Table (stg.fact_marketing_daily_inc)
+   - Batch-only landing table
+   - Truncated each execution
+   - Loads only rows where silver_ingestion_timestamp > watermark
+   Why:
+   Separates ingestion layer from warehouse layer.
+
+4) Deduplication Strategy
+   - UNIQUE index on record_hash
+   Why:
+   Ensures idempotent loads and prevents duplicate facts.
+
+5) Validation Procedure
+   - Reconciliation checks (STG vs DW)
+   - Duplicate checks
+   - Referential integrity checks
+   - NULL measure checks
+   - PASS / FAIL single-row output
+   Why:
+   Enterprise-grade warehouse health monitoring.
+
+------------------------------------------------------------
+FILE 2 – Data Warehouse Layer (Star Schema)
+------------------------------------------------------------
+
+Purpose:
+Normalize dataset into a clean, analytics-ready star schema.
+
+What We Implemented:
+
+1) Dimension Tables
+   - dw.dim_date
+   - dw.dim_product
+   - dw.dim_geo
+   - dw.dim_campaign
+   - dw.dim_seller_channel
+
+   Each:
+   - Has PRIMARY KEY
+   - Stores descriptive attributes only
+   Why:
+   Removes redundancy and supports BI slicing/filtering.
+
+2) Fact Table (dw.fact_marketing_daily)
+   - Surrogate key: fact_id
+   - Foreign keys to all dimensions
+   - Stores only keys + measures
+   - Includes record_hash
+   - Includes silver_ingestion_timestamp
+
+   Why surrogate key:
+   Composite key exceeded 900-byte limit and reduces performance.
+
+------------------------------------------------------------
+FILE 3 – Constraints & Integrity
+------------------------------------------------------------
+
+Purpose:
+Enforce relational correctness and prevent bad data.
+
+What We Implemented:
+
+1) Primary Keys
+   - All dimension tables
+   - Fact table (fact_id)
+   Ensures:
+   Row uniqueness and structural integrity.
+
+2) Foreign Keys (Fact ? Dimensions)
+   - date_key ? dim_date
+   - product_key ? dim_product
+   - geo_key ? dim_geo
+   - campaign_key ? dim_campaign
+   - seller_channel_key ? dim_seller_channel
+   Ensures:
+   No orphan fact records.
+
+3) Unique Constraint
+   - UNIQUE(record_hash)
+   Ensures:
+   Duplicate fact prevention.
+
+------------------------------------------------------------
+FILE 4 – Performance Indexing
+------------------------------------------------------------
+
+Purpose:
+Optimize warehouse for BI query performance.
+
+What We Implemented:
+
+1) Clustered Index on date_key
+   Why:
+   Most BI queries filter by time.
+   Improves time-based scan performance.
+
+2) Nonclustered Indexes on Fact FKs
+   - product_key
+   - geo_key
+   - campaign_key
+   - seller_channel_key
+   Why:
+   Improves star-join performance.
+
+3) PK as NONCLUSTERED on fact_id
+   Why:
+   Allows clustered index on date_key while maintaining surrogate key.
+
+------------------------------------------------------------
+FILE 5 – Mart / Semantic Layer
+------------------------------------------------------------
+
+Purpose:
+Provide BI-ready abstraction layer.
+
+What We Implemented:
+
+1) Views Instead of Direct Table Access
+   - mart.vw_fact_marketing_daily
+   - mart.vw_dim_date
+   - mart.vw_dim_product
+   - mart.vw_dim_geo
+   - mart.vw_dim_campaign
+   - mart.vw_dim_seller_channel
+
+   Why:
+   Decouples BI from physical tables.
+   Enables future schema evolution.
+
+2) Clean Exposure
+   - Fact view exposes keys + measures only
+   - Dimension views expose descriptive attributes
+   Why:
+   Clean star schema modeling for Power BI.
+
+------------------------------------------------------------
+KEY ARCHITECTURAL DECISIONS
+------------------------------------------------------------
+
+Incremental loading        ? Performance & scalability
+Watermark mechanism        ? Avoid duplicate processing
+record_hash unique         ? Idempotent ETL
+Surrogate fact_id          ? Avoid composite PK issues
+Star schema                ? BI optimized modeling
+FK enforcement             ? Referential integrity
+Cluster on date_key        ? Time-based query optimization
+Mart views                 ? BI abstraction layer
+
+------------------------------------------------------------
+FINAL SYSTEM FLOW
+------------------------------------------------------------
+
+Databricks Gold
+? Incremental Staging Load
+? Deduplicated Fact Insert
+? FK Enforcement
+? Validation Engine
+? Mart Views
+? Power BI
+
+------------------------------------------------------------
+FINAL OUTCOME
+------------------------------------------------------------
+
+? Normalized star schema
+? Incremental ETL architecture
+? Deduplication enforcement
+? Referential integrity
+? Enterprise validation framework
+? BI-ready semantic layer
