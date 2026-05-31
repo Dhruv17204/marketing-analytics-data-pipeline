@@ -1,8 +1,8 @@
-MARKETING ANALYTICS DATA WAREHOUSE – ARCHITECTURE OVERVIEW
+MARKETING ANALYTICS DATA WAREHOUSE â€“ ARCHITECTURE OVERVIEW
 ===========================================================
 
 ------------------------------------------------------------
-FILE 1 – ETL Control + Staging + Validation
+FILE 1 â€“ ETL Control + Staging + Validation
 ------------------------------------------------------------
 
 Purpose:
@@ -48,7 +48,7 @@ What We Implemented:
    Enterprise-grade warehouse health monitoring.
 
 ------------------------------------------------------------
-FILE 2 – Data Warehouse Layer (Star Schema)
+FILE 2 â€“ Data Warehouse Layer (Star Schema)
 ------------------------------------------------------------
 
 Purpose:
@@ -80,7 +80,7 @@ What We Implemented:
    Composite key exceeded 900-byte limit and reduces performance.
 
 ------------------------------------------------------------
-FILE 3 – Constraints & Integrity
+FILE 3 â€“ Constraints & Integrity
 ------------------------------------------------------------
 
 Purpose:
@@ -109,7 +109,7 @@ What We Implemented:
    Duplicate fact prevention.
 
 ------------------------------------------------------------
-FILE 4 – Performance Indexing
+FILE 4 â€“ Performance Indexing
 ------------------------------------------------------------
 
 Purpose:
@@ -135,7 +135,7 @@ What We Implemented:
    Allows clustered index on date_key while maintaining surrogate key.
 
 ------------------------------------------------------------
-FILE 5 – Mart / Semantic Layer
+FILE 5 â€“ Mart / Semantic Layer
 ------------------------------------------------------------
 
 Purpose:
